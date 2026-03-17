@@ -34,6 +34,23 @@ def _auth_headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
+def get_root(token: str) -> DriveItem:
+    url = f"{GRAPH_BASE}/me/drive/root"
+    resp = requests.get(url, headers=_auth_headers(token))
+    if resp.status_code == 401:
+        raise AuthError("Authentication failed")
+    if not resp.ok:
+        raise OneDriveError(f"Graph API error {resp.status_code}: {resp.text}")
+    data = resp.json()
+    return DriveItem(
+        id=data["id"],
+        name=data["name"],
+        size=data.get("size", 0),
+        is_folder=True,
+        download_url=None,
+    )
+
+
 def get_item(token: str, path: str) -> DriveItem:
     encoded = quote(path, safe="/")
     url = f"{GRAPH_BASE}/me/drive/root:/{encoded}"

@@ -18,6 +18,39 @@ def callback():
 
 
 @app.command()
+def ls(
+    path: str = typer.Argument(None, help="Path on OneDrive to list (default: root)"),
+):
+    """List files and directories on OneDrive."""
+    token = get_access_token()
+
+    try:
+        if path:
+            item = onedrive.get_item(token, path)
+            if not item.is_folder:
+                typer.echo(f"Error: '{path}' is not a directory.")
+                raise typer.Exit(1)
+        else:
+            item = onedrive.get_root(token)
+    except onedrive.ItemNotFoundError:
+        typer.echo(f"Error: '{path}' not found.")
+        raise typer.Exit(1)
+    except onedrive.AuthError:
+        typer.echo("Auth failed. Run login first.")
+        raise typer.Exit(1)
+    except onedrive.OneDriveError as e:
+        typer.echo(f"Error: {e}")
+        raise typer.Exit(1)
+
+    children = onedrive.list_children(token, item.id)
+    for child in children:
+        if child.is_folder:
+            typer.echo(f"[DIR]  {child.name}")
+        else:
+            typer.echo(f"[FILE] {child.name}  ({child.size:,} bytes)")
+
+
+@app.command()
 def login():
     """Authenticate to Microsoft OneDrive via device code flow."""
     auth_login()
