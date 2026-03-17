@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import typer
+from rich.console import Console
+from rich.table import Table
 
 from backup_drive import onedrive
 from backup_drive.auth import get_access_token
@@ -10,6 +12,14 @@ from backup_drive.download import download_file, download_folder
 app = typer.Typer(
     help="Backup files from OneDrive to local storage.", no_args_is_help=True
 )
+
+
+def _format_size(size: int) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024:
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} TB"
 
 
 @app.callback()
@@ -43,11 +53,19 @@ def ls(
         raise typer.Exit(1)
 
     children = onedrive.list_children(token, item.id)
+
+    table = Table(show_header=True, box=None, pad_edge=False)
+    table.add_column("", width=2)
+    table.add_column("Name")
+    table.add_column("Size", justify="right")
+
     for child in children:
         if child.is_folder:
-            typer.echo(typer.style("\uf07b", fg=typer.colors.BLUE) + f"  {child.name}")
+            table.add_row("[blue]\uf07b[/blue]", child.name, "-")
         else:
-            typer.echo(typer.style("\uf15b", fg=typer.colors.GREEN) + f"  {child.name}  ({child.size:,} bytes)")
+            table.add_row("[green]\uf15b[/green]", child.name, _format_size(child.size))
+
+    Console().print(table)
 
 
 @app.command()
