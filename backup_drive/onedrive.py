@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import quote
 
@@ -80,10 +81,17 @@ def download_file(
     dest_path,
     progress_callback: Callable[[int], None],
 ) -> None:
-    with requests.get(download_url, stream=True) as resp:
-        resp.raise_for_status()
-        with open(dest_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=CHUNK_SIZE):
-                if chunk:
-                    f.write(chunk)
-                    progress_callback(len(chunk))
+    dest_path = Path(dest_path)
+    tmp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
+    try:
+        with requests.get(download_url, stream=True) as resp:
+            resp.raise_for_status()
+            with open(tmp_path, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=CHUNK_SIZE):
+                    if chunk:
+                        f.write(chunk)
+                        progress_callback(len(chunk))
+        tmp_path.replace(dest_path)
+    except:
+        tmp_path.unlink(missing_ok=True)
+        raise
