@@ -93,6 +93,25 @@ def list_children(token: str, folder_id: str) -> list[DriveItem]:
     return items
 
 
+def get_item_by_id(token: str, item_id: str) -> DriveItem:
+    url = f"{GRAPH_BASE}/me/drive/items/{item_id}"
+    resp = requests.get(url, headers=_auth_headers(token))
+    if resp.status_code == 404:
+        raise ItemNotFoundError(f"Item '{item_id}' not found on OneDrive")
+    if resp.status_code == 401:
+        raise AuthError("Authentication failed")
+    if not resp.ok:
+        raise OneDriveError(f"Graph API error {resp.status_code}: {resp.text}")
+    data = resp.json()
+    return DriveItem(
+        id=data["id"],
+        name=data["name"],
+        size=data.get("size", 0),
+        is_folder="folder" in data,
+        download_url=data.get("@microsoft.graph.downloadUrl"),
+    )
+
+
 def download_file(
     download_url: str,
     dest_path,
@@ -102,6 +121,8 @@ def download_file(
     tmp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
     try:
         with requests.get(download_url, stream=True) as resp:
+            if resp.status_code == 401:
+                raise AuthError("Authentication failed")
             resp.raise_for_status()
             with open(tmp_path, "wb") as f:
                 for chunk in resp.iter_content(chunk_size=CHUNK_SIZE):

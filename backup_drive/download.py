@@ -12,6 +12,7 @@ from rich.progress import (
 )
 
 from backup_drive import onedrive
+from backup_drive.auth import get_access_token
 
 
 def download_file(
@@ -39,9 +40,18 @@ def download_file(
         task = progress.add_task("download", filename=item.name, total=item.size)
         if item.download_url is None:
             raise ValueError(f"Item '{item.name}' has no download URL")
-        onedrive.download_file(
-            item.download_url, dest, lambda n: progress.advance(task, n)
-        )
+        try:
+            onedrive.download_file(
+                item.download_url, dest, lambda n: progress.advance(task, n)
+            )
+        except onedrive.AuthError:
+            new_token = get_access_token()
+            refreshed_item = onedrive.get_item_by_id(new_token, item.id)
+            if refreshed_item.download_url is None:
+                raise ValueError(f"Item '{item.name}' has no download URL after token refresh")
+            onedrive.download_file(
+                refreshed_item.download_url, dest, lambda n: progress.advance(task, n)
+            )
 
 
 def download_folder(
