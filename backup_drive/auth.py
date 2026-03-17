@@ -4,8 +4,8 @@ from pathlib import Path
 import msal
 import typer
 
-SCOPES = ["Files.Read", "offline_access"]
-AUTHORITY = "https://login.microsoftonline.com/common"
+SCOPES = ["Files.Read"]
+AUTHORITY = "https://login.microsoftonline.com/consumers"
 
 
 def get_cache_path() -> Path:
@@ -55,7 +55,9 @@ def login() -> None:
 
     flow = msal_app.initiate_device_flow(scopes=SCOPES)
     if "user_code" not in flow:
-        typer.echo(f"Error initiating device flow: {flow.get('error_description', 'unknown error')}")
+        typer.echo(
+            f"Error initiating device flow: {flow.get('error_description', 'unknown error')}"
+        )
         raise typer.Exit(code=1)
 
     typer.echo(flow["message"])
@@ -66,7 +68,9 @@ def login() -> None:
         save_token_cache(cache)
         typer.echo("Login successful. Credentials stored.")
     else:
-        typer.echo(f"Login failed: {result.get('error')}: {result.get('error_description')}")
+        typer.echo(
+            f"Login failed: {result.get('error')}: {result.get('error_description')}"
+        )
         raise typer.Exit(code=1)
 
 
