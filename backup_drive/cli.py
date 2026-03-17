@@ -30,8 +30,15 @@ def download(
     force: bool = typer.Option(
         False, "--force", "-f", help="Overwrite without prompting"
     ),
+    quiet: bool = typer.Option(
+        False, "--quiet", "-q", help="Skip files that already exist locally"
+    ),
 ):
     """Download a file or directory from OneDrive to a local path."""
+    if force and quiet:
+        typer.echo("Error: --force and --quiet are mutually exclusive.")
+        raise typer.Exit(1)
+
     token = get_access_token()
 
     try:
@@ -47,6 +54,6 @@ def download(
         raise typer.Exit(1)
 
     if item.is_folder:
-        download_folder(token, item, target, force)
+        download_folder(token, item, target, force, quiet)
     else:
-        download_file(token, item, target, force)
+        download_file(token, item, target, force, quiet)

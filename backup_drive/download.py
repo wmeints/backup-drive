@@ -19,13 +19,13 @@ def download_file(
     item: onedrive.DriveItem,
     target_dir: Path,
     force: bool,
+    quiet: bool = False,
 ) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
     dest = target_dir / item.name
 
-    if dest.exists() and not force:
-        overwrite = typer.confirm(f"'{dest}' already exists. Overwrite?")
-        if not overwrite:
+    if dest.exists():
+        if quiet or (not force and not typer.confirm(f"'{dest}' already exists. Overwrite?")):
             typer.echo(f"Skipped '{item.name}'.")
             return
 
@@ -49,6 +49,7 @@ def download_folder(
     root_item: onedrive.DriveItem,
     target: Path,
     force: bool,
+    quiet: bool = False,
 ) -> None:
     queue = deque([(root_item, target / root_item.name)])
     while queue:
@@ -58,4 +59,4 @@ def download_folder(
             if child.is_folder:
                 queue.append((child, local_dir / child.name))
             else:
-                download_file(token, child, local_dir, force)
+                download_file(token, child, local_dir, force, quiet)
