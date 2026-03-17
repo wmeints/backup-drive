@@ -45,9 +45,9 @@ def ls(
     children = onedrive.list_children(token, item.id)
     for child in children:
         if child.is_folder:
-            typer.echo(f"[DIR]  {child.name}")
+            typer.echo(f"\uf07b  {child.name}")
         else:
-            typer.echo(f"[FILE] {child.name}  ({child.size:,} bytes)")
+            typer.echo(f"\uf15b  {child.name}  ({child.size:,} bytes)")
 
 
 @app.command()
