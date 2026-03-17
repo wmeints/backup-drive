@@ -1,0 +1,31 @@
+[project]
+name = "backup-drive"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "typer>=0.12",
+    "msal>=1.28",
+    "requests>=2.32.5",
+    "rich>=14.3.3",
+]
+
+[project.scripts]
+backup-drive = "backup_drive.cli:app"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backup_drive*"]
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.408",
+]
